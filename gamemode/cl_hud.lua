@@ -44,6 +44,9 @@ end
 
 function GM:HUDPaint()
 	if LocalPlayer():Alive() then
+		if LocalPlayer():Team() == 2 then
+			//DrawSkillAmmo()
+		end
 	end
 	-- self:DrawMoney()
 	self:DrawGameHUD()
@@ -56,7 +59,8 @@ end
 local helpKeysProps = {
 	{"attack", "Disguise as prop"},
 	{"menu_context", "Lock prop rotation"},
-	{"gm_showspare1", "Taunt"}
+	{"gm_showspare1", "Taunt"},
+	{"gm_showspare2", "Random Taunt"}
 }
 
 local function keyName(str)
@@ -103,7 +107,7 @@ function GM:DrawGameHUD()
 	end
 
 
-	local help 
+	local help
 	if LocalPlayer():Alive() then
 		if LocalPlayer():Team() == 3 then
 			if self:GetGameState() == 1 || (self:GetGameState() == 2 && !LocalPlayer():IsDisguised()) then
@@ -239,21 +243,27 @@ function GM:DrawHealth(ply)
 
 
 	render.SetStencilEnable( false )
- 
+
 	render.SetStencilWriteMask( 0 );
 		render.SetStencilReferenceValue( 0 );
 		render.SetStencilTestMask( 0 );
 		render.SetStencilEnable( false )
 		render.OverrideDepthEnable( false )
 		render.SetBlend( 1 )
-		
+
 		cam.IgnoreZ( false )
 
+	local fg = draw.GetFontHeight("RobotoHUD-15")
 	if ply:IsDisguised() && ply:DisguiseRotationLocked() then
-		local fg = draw.GetFontHeight("RobotoHUD-15")
 		draw.ShadowText("ROTATION", "RobotoHUD-15", x + w + 20, y + h / 2 - fg / 2, color_white, 0, 1)
 		draw.ShadowText("LOCK", "RobotoHUD-15", x + w + 20, y + h / 2 + fg / 2, color_white, 0, 1)
 	end
+
+	if ply:Team() == 2 then
+		local skillAmt = ply:GetForceTauntSkillCount()
+		draw.ShadowText(string.format("Force Prop Taunt: %s left", skillAmt), "RobotoHUD-15", x + w + 20, y + h / 2 - fg / 2, color_white, 0, 1)
+	end
+
 end
 
 function GM:DrawMoney()
@@ -315,10 +325,15 @@ function GM:HUDShouldDraw(name)
 	return true
 end
 
+function GM:GetRoundHideTime()
+	local ply = LocalPlayer()
+	return ply:GetNWInt("RoundHidetime", 10)
+end
+
 function GM:DrawRoundTimer()
 
 	if self:GetGameState() == 1 then
-		local time = math.ceil(30 - self:GetStateRunningTime())
+		local time = math.ceil(self:GetRoundHideTime() - self:GetStateRunningTime())
 		if time > 0 then
 			draw.ShadowText("Hunters will be released in", "RobotoHUD-15", ScrW() / 2, ScrH() / 3 - draw.GetFontHeight("RobotoHUD-40") / 2, color_white, 1, 4)
 			draw.ShadowText(time, "RobotoHUD-40", ScrW() / 2, ScrH() / 3, color_white, 1, 1)

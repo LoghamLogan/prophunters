@@ -1,9 +1,12 @@
-GM.Name 	= "Prophunters"
-GM.Author 	= "MechanicalMind"
-// Credits to waddlesworth for the logo and icon
-GM.Email 	= ""
-GM.Website 	= "http://codingconcoctions.com/"
-GM.Version 	= "1.4"
+/**
+	Original gamemode created by MechanicalMind.
+	Updated with new features by Logham.
+**/
+GM.Name 	  = "PKML Prophunters"
+GM.Author 	= "Logham"
+GM.Email 	  = "prophunt@sojusoft.dev"
+GM.Website 	= "https://twitter.com/_logham"
+GM.Version 	= "1.5"
 
 team.SetUp(1, "Spectators", Color(120, 120, 120))
 team.SetUp(2, "Hunters", Color(255, 150, 50))

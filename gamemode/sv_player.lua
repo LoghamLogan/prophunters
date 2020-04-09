@@ -158,6 +158,7 @@ function GM:PlayerLoadout(ply)
 		if amo > 0 then
 			ply:GiveAmmo(amo, "SMG1_Grenade")
 		end
+
 	end
 end
 
@@ -255,16 +256,16 @@ function GM:PlayerSelectSpawn( pl )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_pirate" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_viking" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "diprip_start_team_blue" ) )
-		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_blue" ) )        
+		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_blue" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_human" ) )
-	elseif pl:Team() == 2 then 
+	elseif pl:Team() == 2 then
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_counterterrorist" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_allies" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_rebel" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_knight" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "diprip_start_team_red" ) )
 		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_red" ) )
-		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_zombie" ) )      
+		spawnPoints = table.Add( spawnPoints, ents.FindByClass( "info_player_zombie" ) )
 	end
 
 	local Count = table.Count( spawnPoints )
@@ -283,17 +284,17 @@ function GM:PlayerSelectSpawn( pl )
 
 	// recount
 	local Count = table.Count( spawnPoints )
-	
+
 	if ( Count == 0 ) then
 		Msg("[PlayerSelectSpawn] Error! No spawn points!\n")
 		return nil
 	end
-	
+
 	local ChosenSpawnPoint = nil
-	
+
 	-- Try to work out the best, random spawnpoint
 	for i = 0, Count do
-	
+
 		ChosenSpawnPoint = table.Random( spawnPoints )
 
 		if ( ChosenSpawnPoint &&
@@ -301,21 +302,21 @@ function GM:PlayerSelectSpawn( pl )
 			ChosenSpawnPoint:IsInWorld() &&
 			ChosenSpawnPoint != pl:GetVar( "LastSpawnpoint" ) &&
 			ChosenSpawnPoint != self.LastSpawnPoint ) then
-			
+
 			if ( hook.Call( "IsSpawnpointSuitable", GAMEMODE, pl, ChosenSpawnPoint, i == Count ) ) then
-			
+
 				self.LastSpawnPoint = ChosenSpawnPoint
 				pl:SetVar( "LastSpawnpoint", ChosenSpawnPoint )
 				return ChosenSpawnPoint
-			
+
 			end
-			
+
 		end
-			
+
 	end
-	
+
 	return ChosenSpawnPoint
-	
+
 end
 
 function GM:PlayerDeathThink(ply)
@@ -340,7 +341,7 @@ function GM:DoPlayerDeath(ply, attacker, dmginfo)
 	ply:UnDisguise()
 
 	ply:Freeze(false) // why?, *sigh*
-	
+
 	ply:CreateRagdoll()
 
 	local ent = ply:GetNWEntity("DeathRagdoll")
@@ -436,7 +437,7 @@ end
 
 function GM:PlayerCanSeePlayersChat( text, teamOnly, listener, speaker )
 	if !IsValid(speaker) then return false end
-	local canhear = self:PlayerCanHearChatVoice(listener, speaker, "chat", teamOnly) 
+	local canhear = self:PlayerCanHearChatVoice(listener, speaker, "chat", teamOnly)
 	return canhear
 end
 
@@ -451,9 +452,9 @@ end
 
 
 local sv_alltalk = GetConVar( "sv_alltalk" )
-function GM:PlayerCanHearPlayersVoice( listener, talker ) 
+function GM:PlayerCanHearPlayersVoice( listener, talker )
 	if !IsValid(talker) then return false end
-	return self:PlayerCanHearChatVoice(listener, talker, "voice") 
+	return self:PlayerCanHearChatVoice(listener, talker, "voice")
 end
 
 
@@ -467,7 +468,7 @@ function GM:PlayerCanHearChatVoice( listener, talker, typ, teamOnly )
 	if sv_alltalk:GetBool() then
 		return true
 	end
-	
+
 	if self:GetGameState() == 3 || self:GetGameState() == 0 then
 		return true
 	end
@@ -493,4 +494,157 @@ function GM:PlayerCanPickupWeapon(ply, wep)
 		end
 	end
 	return true
+end
+
+function PlayerMeta:GetForceTauntSkillCount()
+	return self:GetNWInt("forcetauntskillcount", 0)
+end
+
+function PlayerMeta:SetForceTauntSkillCount(amount)
+	self:SetNWInt("forcetauntskillcount", amount)
+end
+
+function PlayerMeta:SetNextRandomTauntTime(offset)
+	local time = math.random(GAMEMODE.RandTimeMin:GetInt(), GAMEMODE.RandTimeMax:GetInt())
+	self.NextRandomTauntTime = math.floor(offset + time);
+	--print(string.format("New random taunt for player %s @ %s", self:GetName(), self.NextRandomTauntTime))
+end
+
+function PlayerMeta:GetNextRandomTauntTime()
+	return self.NextRandomTauntTime
+end
+
+function PlayerMeta:DoRandomTaunt()
+
+	if !IsValid(self) then
+		return false
+	end
+
+	if !self:Alive() then
+		return false
+	end
+
+	if self.Taunting && self.Taunting > CurTime() then
+		return false
+	end
+
+	local potential = {}
+	for k, v in pairs(Taunts) do
+		if v.sex && v.sex != self.ModelSex then
+			continue
+		end
+
+		if v.team && v.team != self:Team() then
+			continue
+		end
+
+		table.insert(potential, v)
+	end
+
+	if #potential == 0 then
+		return false
+	end
+
+	local t = potential[math.random(#potential)]
+	local snd = t.sound[math.random(#t.sound)]
+
+	local duration = SoundDuration(snd)
+	if snd:match("%.mp3$") then
+		duration = t.soundDurationOverride or 1
+	end
+
+	self:EmitSound(snd)
+	self.Taunting = CurTime() + duration + 0.1
+	self.TauntAmount = (self.TauntAmount or 0) + 1
+
+	return true
+
+end
+
+function PlayerMeta:UseHunterForcePropTauntSkill()
+
+	if !IsValid(self) then
+		return
+	end
+
+	if !self:Alive() then
+		return
+	end
+
+	if self:Team() ~= 2 then
+		return
+	end
+
+	local skillAmmo = self:GetForceTauntSkillCount()
+	if skillAmmo <= 0 then
+		print("Cannot force prop taunt. No skill charges left!")
+		print(string.format("Charges: %s", skillAmmo))
+		return
+	end
+
+	local closestProp = GAMEMODE:GetClosestProp(self)
+	if closestProp == nil then
+		return
+	end
+
+	local success = closestProp:DoRandomTaunt()
+
+	if success then
+		self:SetForceTauntSkillCount(skillAmmo - 1)
+	end
+
+end
+
+function PlayerMeta:SetRoundHideTime(value)
+	self:SetNWInt("RoundHideTime", value)
+end
+
+function PlayerMeta:GetHunterSilence()
+	return self:GetNWBool("deafenhunters", false)
+end
+
+function PlayerMeta:SetHunterSilence(value)
+	return self:SetNWBool("deafenhunters", value)
+end
+
+function PlayerMeta:ResetPropFrozen()
+	self:SetNWBool("PropIsFrozen", false)
+	self.SavedPos = nil
+end
+
+function PlayerMeta:FreezeProp()
+	if self:Team() ~= 3 then
+		return
+	end
+	if self.SavedPos ~= nil then
+		print(self:GetName(), "unfrozen")
+		self.SavedPos = nil
+		self:SetNWBool("PropIsFrozen", false)
+	else
+		print(self:GetName(), "frozen")
+		self.SavedPos = self:GetPos()
+		self:SetNWBool("PropIsFrozen", true)
+	end
+end
+
+hook.Add("KeyPress", "keypress_freeze_prop", function( ply, key )
+    if ( key == IN_RELOAD ) then
+        ply:FreezeProp()
+    end
+end)
+
+concommand.Add("ph_prop_freeze", function (ply, com, args, full)
+	ply:FreezeProp()
+end)
+
+function GM:FinishMove( ply, mv )
+
+	if ply.SavedPos != nil then
+		ply:SetNetworkOrigin( ply.SavedPos )
+		return true
+	end
+
+	-- Don't do the default
+	return false
+
 end

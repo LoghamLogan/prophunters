@@ -49,8 +49,14 @@ GM.HunterGrenadeAmount = CreateConVar("ph_hunter_smggrenades", 1, bit.bor(FCVAR_
 GM.DeadSpectateRoam = CreateConVar("ph_dead_canroam", 0, bit.bor(FCVAR_NOTIFY), "Can dead players use the roam spectate mode" )
 GM.PropsWinStayProps = CreateConVar("ph_props_onwinstayprops", 0, bit.bor(FCVAR_NOTIFY), "If the props win, they stay on the props team" )
 GM.PropsSmallSize = CreateConVar("ph_props_small_size", 200, bit.bor(FCVAR_NOTIFY), "Size that speed penalty for small size starts to apply (0 to disable)" )
-GM.PropsJumpPower = CreateConVar("ph_props_jumppower", 1.2, bit.bor(FCVAR_NOTIFY), "Jump power bonus for when props are disguised" )
+GM.PropsJumpPower = CreateConVar("ph_props_jumppower", 2, bit.bor(FCVAR_NOTIFY), "Jump power bonus for when props are disguised" )
 GM.PropsCamDistance = CreateConVar("ph_props_camdistance", 1, bit.bor(FCVAR_NOTIFY), "The camera distance multiplier for props when disguised")
+GM.RandTauntEnabled = CreateConVar("ph_randtaunt_enabled", 1, bit.bor(FCVAR_NOTIFY), "Enable random prop taunting (0 to disable)")
+GM.RandTimeMin = CreateConVar("ph_randtaunt_min", 30, bit.bor(FCVAR_NOTIFY), "Minimum time for random taunt")
+GM.RandTimeMax = CreateConVar("ph_randtaunt_max", 90, bit.bor(FCVAR_NOTIFY), "Maximum time for random taunt")
+GM.DeafenHuntersAtStart = CreateConVar("ph_mapstart_silence", 1, bit.bor(FCVAR_NOTIFY), "Deafen the hunters while the props are hiding")
+GM.HuntersForceTauntSkillAmount = CreateConVar("ph_hunter_forcetauntskill_amount", 1, bit.bor(FCVAR_NOTIFY), "Amount of times a hunter can press F4 to force the closest prop to taunt (0 to disable)")
+GM.RoundHideTime = CreateConVar("ph_roundhidetime", 30, bit.bor(FCVAR_NOTIFY), "Number of seconds before hunters are released" )
 
 function GM:Initialize()
 	self.RoundWaitForPlayers = CurTime()
@@ -61,14 +67,14 @@ function GM:Initialize()
 	self:LoadBannedModels()
 end
 
-function GM:InitPostEntity() 
+function GM:InitPostEntity()
 	self:CheckForNewVersion()
 	self:InitPostEntityAndMapCleanup()
 
 	RunConsoleCommand("mp_show_voice_icons", "0")
 end
 
-function GM:InitPostEntityAndMapCleanup() 
+function GM:InitPostEntityAndMapCleanup()
 	self:RemoveBannedModelProps()
 	for k, ent in pairs(ents.GetAll()) do
 		if ent:GetClass():find("door") then
@@ -102,7 +108,7 @@ function GM:OnEndRound()
 end
 
 function GM:OnStartRound()
-	
+
 end
 
 function GM:EntityTakeDamage( ent, dmginfo )
@@ -121,7 +127,7 @@ function GM:EntityTakeDamage( ent, dmginfo )
 			local att = dmginfo:GetAttacker()
 			if IsValid(att) && att:IsPlayer() && att:Team() == 2 then
 
-				if bit.band(dmginfo:GetDamageType(), DMG_CRUSH) != DMG_CRUSH then					
+				if bit.band(dmginfo:GetDamageType(), DMG_CRUSH) != DMG_CRUSH then
 					local tdmg = DamageInfo()
 					tdmg:SetDamage(math.min(dmginfo:GetDamage(), math.max(self.HunterDamagePenalty:GetInt(), 1) ))
 					tdmg:SetDamageType(DMG_AIRBOAT)
@@ -164,4 +170,13 @@ end
 function GM:ShowSpare1(ply)
 	net.Start("open_taunt_menu")
 	net.Send(ply)
+end
+
+function GM:ShowSpare2(ply)
+	if ply:Team() == 2 then
+		ply:UseHunterForcePropTauntSkill()
+	end
+	if ply:Team() == 3 then
+		ply:DoRandomTaunt()
+	end
 end

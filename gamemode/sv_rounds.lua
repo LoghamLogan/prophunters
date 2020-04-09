@@ -52,7 +52,7 @@ end
 
 function GM:GetRoundSettings()
 	self.RoundSettings = self.RoundSettings or {}
-	return self.RoundSettings 
+	return self.RoundSettings
 end
 
 function GM:NetworkGameSettings(ply)
@@ -75,8 +75,12 @@ function GM:NetworkGameSettings(ply)
 end
 
 function GM:SetupRound()
+
 	local c = 0
 	for k, ply in pairs(player.GetAll()) do
+		ply:ResetPropFrozen()
+		ply:SetRoundHideTime(self.RoundHideTime:GetInt())
+		ply:SetHunterSilence(self.DeafenHuntersAtStart:GetBool())
 		if ply:Team() != 1 then // ignore spectators
 			c = c + 1
 		end
@@ -108,7 +112,7 @@ function GM:SetupRound()
 		end
 	end
 	self:CleanupMap()
-	
+
 	self.Rounds = self.Rounds + 1
 	hook.Run("OnSetupRound")
 	self:SetGameState(1)
@@ -126,6 +130,8 @@ function GM:StartRound()
 		ply.PropMovement = 0
 		ply.HunterKills = 0
 		ply.TauntAmount = 0
+		ply:SetForceTauntSkillCount(self.HuntersForceTauntSkillAmount:GetInt())
+		ply:SetNextRandomTauntTime(0)
 		if ply:Team() == 2 then
 			hunters = hunters + 1
 		elseif ply:Team() == 3 then
@@ -211,7 +217,7 @@ function GM:EndRound(reason)
 				leastMoveAmo = ply.PropMovement
 				leastMovePly = ply
 			end
-			
+
 			// get prop with most movement
 			if mostMoveAmo == nil || ply.PropMovement > mostMoveAmo then
 				mostMoveAmo = ply.PropMovement
@@ -233,11 +239,11 @@ function GM:EndRound(reason)
 	if leastMovePly then
 		self.PlayerAwards["LeastMovement"] = leastMovePly
 	end
-	
+
 	if mostMovePly then
 		self.PlayerAwards["MostMovement"] = mostMovePly
 	end
-	
+
 	if killsPly then
 		self.PlayerAwards["MostKills"] = killsPly
 	end
@@ -325,6 +331,59 @@ function GM:CheckForVictory()
 	end
 end
 
+function GM:GetAllAlivePropPlayers()
+	local members = {}
+	for k, v in pairs(player.GetAll()) do
+		// only find props
+		if v:Team() ~= 3 then
+			continue
+		end
+		if !v:Alive() then
+			continue
+		end
+		table.insert(members, v)
+	end
+	return members
+end
+
+function GM:GetClosestProp(ply)
+	local closestply
+	local closestdist
+	local aliveProps = self:GetAllAlivePropPlayers()
+
+	for index, v in ipairs(aliveProps) do
+		if v ~= ply then
+			local dist = ply:GetPos():DistToSqr(v:GetPos())
+			if not closestdist then
+				closestdist = dist
+			end
+			if dist <= closestdist then
+				closestply = v
+			end
+		end
+	end
+	return closestply
+end
+
+function GM:DoRandomTaunts()
+	if !self.RandTauntEnabled:GetBool() then
+		return
+	end
+	local aliveProps = self:GetAllAlivePropPlayers()
+	for k, ply in ipairs(aliveProps) do
+		if ply:GetNextRandomTauntTime() == nil then
+			 return
+		end
+		local stateTime = self:GetStateRunningTime()
+		local shouldTaunt = stateTime > ply:GetNextRandomTauntTime()
+		if shouldTaunt then
+			ply:SetNextRandomTauntTime(stateTime)
+			ply:DoRandomTaunt()
+		end
+
+	end
+end
+
 function GM:RoundsThink()
 	if self:GetGameState() == 0 then
 		local c = 0
@@ -337,7 +396,7 @@ function GM:RoundsThink()
 			self:SetupRound()
 		end
 	elseif self:GetGameState() == 1 then
-		if self:GetStateRunningTime() > 30 then
+		if self:GetStateRunningTime() > self.RoundHideTime:GetInt() then
 			self:StartRound()
 		end
 	elseif self:GetGameState() == 2 then
@@ -348,6 +407,9 @@ function GM:RoundsThink()
 				ply.PropMovement = (ply.PropMovement or 0) + ply:GetVelocity():Length()
 			end
 		end
+
+		self:DoRandomTaunts()
+
 	elseif self:GetGameState() == 3 then
 		if self:GetStateRunningTime() > (self.RoundSettings.NextRoundTime or 30) then
 			if self.RoundLimit:GetInt() > 0 && self.Rounds >= self.RoundLimit:GetInt() then

@@ -1,6 +1,7 @@
 include("sh_taunt.lua")
 
 util.AddNetworkString("open_taunt_menu")
+util.AddNetworkString("hunter_force_prop_taunt")
 
 concommand.Add("ph_taunt", function (ply, com, args, full)
 	if !IsValid(ply) then
@@ -46,42 +47,9 @@ concommand.Add("ph_taunt", function (ply, com, args, full)
 end)
 
 concommand.Add("ph_taunt_random", function (ply, com, args, full)
-	if !IsValid(ply) then
-		return
-	end
+	ply:DoRandomTaunt()
+end)
 
-	if !ply:Alive() then return end
-
-	if ply.Taunting && ply.Taunting > CurTime() then
-		return
-	end
-
-	local potential = {}
-	for k, v in pairs(Taunts) do
-		if v.sex && v.sex != ply.ModelSex then
-			continue
-		end
-
-		if v.team && v.team != ply:Team() then
-			continue
-		end
-
-		table.insert(potential, v)
-	end
-
-	if #potential == 0 then 
-		return
-	end
-
-	local t = potential[math.random(#potential)]
-	local snd = t.sound[math.random(#t.sound)]
-
-	local duration = SoundDuration(snd)
-	if snd:match("%.mp3$") then
-		duration = t.soundDurationOverride or 1
-	end
-
-	ply:EmitSound(snd)
-	ply.Taunting = CurTime() + duration + 0.1
-	ply.TauntAmount = (ply.TauntAmount or 0) + 1
+concommand.Add("ph_hunter_force_prop_taunt", function (ply, com, args, full)
+	ply:UseHunterForcePropTauntSkill()
 end)

@@ -1,8 +1,8 @@
 "Gamemode"
 {
 	"base"		"base"
-	"title"		"Prophunters"
+	"title"		"PKML Prophunters"
 	"maps"		"^ph_"
 	"menusystem"	"1"
-	"version" 	"1.4"
+	"version" 	"1.5"
 }

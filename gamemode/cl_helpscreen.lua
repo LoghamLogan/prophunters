@@ -8,7 +8,7 @@ local function addHelpText(heading, size, text, color)
 	t.size = size or 1
 	t.category = cat
 	t.text = text
-	t.color = color 
+	t.color = color
 	table.insert(categories, t)
 end
 
@@ -16,11 +16,11 @@ end
 addHelpText("Intro", 1, [[
 Prop Hunters is a gamemode based on the classic Prop Hunt. I've added better looks, more features and lots of fixes to gameplay.
 
-
 ==CONTROLS==
 LEFT CLICK - Disguises as the prop you are looking at
 C - Locks your prop's rotation when disguised
 F3 - Taunt
+F4 - Force Closest Prop To Taunt
 
 ==OBJECTIVES==
 The aim of the hunters is to find and kill all the props.

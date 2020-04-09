@@ -31,7 +31,7 @@ function PlayerMeta:DisguiseAsProp(ent)
 		ct:Send(self)
 		return
 	end
-	
+
 	if !self:IsDisguised() then
 		self.OldPlayerModel = self:GetModel()
 	end
@@ -50,7 +50,7 @@ function PlayerMeta:DisguiseAsProp(ent)
 		dent:Spawn()
 	end
 	dent:SetModel(ent:GetModel())
-	
+
 	self:SetNWBool("disguised", true)
 	self:SetNWString("disguiseModel", ent:GetModel())
 	self:SetNWVector("disguiseMins", ent:OBBMins())
@@ -85,7 +85,9 @@ function PlayerMeta:DisguiseAsProp(ent)
 	self:SetViewOffset(offset)
 	self:SetViewOffsetDucked(offset)
 
-	self:EmitSound("weapons/bugbait/bugbait_squeeze" .. math.random(1, 3) .. ".wav")
+	if !GAMEMODE.DeafenHuntersAtStart:GetBool() || GAMEMODE:GetGameState() ~= 1 then
+		self:EmitSound("weapons/bugbait/bugbait_squeeze" .. math.random(1, 3) .. ".wav")
+	end
 	self.LastDisguise = CurTime()
 
 	local eff = EffectData()
@@ -117,7 +119,7 @@ function PlayerMeta:UnDisguise()
 	end
 	self:SetViewOffset(Vector(0, 0, 64))
 	self:SetViewOffsetDucked(Vector(0, 0, 28))
-	
+
 	self:CalculateSpeed()
 end
 
