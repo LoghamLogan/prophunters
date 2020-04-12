@@ -377,6 +377,8 @@ end
 function GM:PlayerDeath(ply, inflictor, attacker )
 	self:DoRoundDeaths(ply, attacker)
 
+	ply:ResetPropFrozen()
+
 	ply.NextSpawnTime = CurTime() + 1
 	ply.DeathTime = CurTime()
 
@@ -500,14 +502,39 @@ function PlayerMeta:GetForceTauntSkillCount()
 	return self:GetNWInt("forcetauntskillcount", 0)
 end
 
+function PlayerMeta:GetLastRandomTauntTime()
+	return self:GetNWInt("LastRandomTauntTime", 0)
+end
+
+function PlayerMeta:SetLastRandomTauntTime(value)
+	self:SetNWInt("LastRandomTauntTime", value)
+end
+
 function PlayerMeta:SetForceTauntSkillCount(amount)
 	self:SetNWInt("forcetauntskillcount", amount)
 end
 
 function PlayerMeta:SetNextRandomTauntTime(offset)
-	local time = math.random(GAMEMODE.RandTimeMin:GetInt(), GAMEMODE.RandTimeMax:GetInt())
+	local time = math.random(GAMEMODE.AutoTauntTimeMin:GetInt(), GAMEMODE.AutoTauntTimeMax:GetInt())
 	self.NextRandomTauntTime = math.floor(offset + time);
-	--print(string.format("New random taunt for player %s @ %s", self:GetName(), self.NextRandomTauntTime))
+	self:SetNWInt("NextRandomTauntTime", self.NextRandomTauntTime)
+	//print(string.format("New random taunt for player %s @ %s", self:GetName(), self.NextRandomTauntTime))
+end
+
+function PlayerMeta:AddToNextRandomTauntTime(offset, duration)
+	local maxTime       = self:GetLastRandomTauntTime() + GAMEMODE.AutoTauntTimeMax:GetInt()
+	local durationMulti = (duration * GAMEMODE.AutoTauntAdditiveMulti:GetFloat())
+	local newTime       = self.NextRandomTauntTime + durationMulti
+
+	if newTime > maxTime then
+		newTime = maxTime
+	end
+
+	self.NextRandomTauntTime = math.floor(newTime)
+	self:SetNWInt("NextRandomTauntTime", self.NextRandomTauntTime)
+	print("duration " .. duration)
+	print("offset " .. offset)
+	print("newtime " .. self.NextRandomTauntTime)
 end
 
 function PlayerMeta:GetNextRandomTauntTime()
@@ -557,15 +584,69 @@ function PlayerMeta:DoRandomTaunt()
 	self.Taunting = CurTime() + duration + 0.1
 	self.TauntAmount = (self.TauntAmount or 0) + 1
 
+	self:SetCurrentTauntLength(duration)
+
+	local stateTime = GAMEMODE:GetStateRunningTime()
+	local endOfTauntTime = stateTime + duration + 0.1
+	self:SetLastRandomTauntTime(endOfTauntTime)
+
+	self:SetNextRandomTauntTime(stateTime + duration)
+
 	return true
 
 end
 
-function PlayerMeta:UseHunterForcePropTauntSkill()
+function PlayerMeta:Taunt(snd)
 
-	if !IsValid(self) then
+	if !self:Alive() then return end
+
+	if self.Taunting && self.Taunting > CurTime() then
 		return
 	end
+
+	if !AllowedTauntSounds[snd] then
+		return
+	end
+
+	local t
+	for k, v in pairs(AllowedTauntSounds[snd]) do
+		if v.sex && v.sex != self.ModelSex then
+			continue
+		end
+
+		if v.team && v.team != self:Team() then
+			continue
+		end
+
+		t = v
+	end
+
+	if !t then
+		return
+	end
+
+	local duration = SoundDuration(snd)
+	if snd:match("%.mp3$") then
+		duration = t.soundDurationOverride or 1
+	end
+
+	self:EmitSound(snd)
+	self.Taunting = CurTime() + duration + 0.1
+	self.TauntAmount = (self.TauntAmount or 0) + 1
+
+	self:SetCurrentTauntLength(duration)
+
+	local stateTime = GAMEMODE:GetStateRunningTime()
+	local endOfTauntTime = stateTime + duration + 0.1
+	self:SetLastRandomTauntTime(endOfTauntTime)
+
+	if GAMEMODE.AutoTauntAdditive:GetBool() then
+		self:AddToNextRandomTauntTime(stateTime, duration)
+	end
+
+end
+
+function PlayerMeta:UseHunterForcePropTauntSkill()
 
 	if !self:Alive() then
 		return
@@ -593,6 +674,34 @@ function PlayerMeta:UseHunterForcePropTauntSkill()
 		self:SetForceTauntSkillCount(skillAmmo - 1)
 	end
 
+end
+
+function PlayerMeta:SetAutoTauntAdditive(value)
+	self:SetNWBool("AutoTauntAdditive", value)
+end
+
+function PlayerMeta:SetCurrentTauntLength(value)
+	self:SetNWInt("CurrentTauntLength", value)
+end
+
+function PlayerMeta:SetAutoTauntEnabled(value)
+		self:SetNWBool("AutoTauntEnabled", value)
+end
+
+function PlayerMeta:SetAutoTauntTimeMin(value)
+		self:SetNWInt("AutoTauntTimeMin", value)
+end
+
+function PlayerMeta:SetAutoTauntTimeMax(value)
+		self:SetNWInt("AutoTauntTimeMax", value)
+end
+
+function PlayerMeta:SetAutoTauntRerolling(value)
+	self:SetNWBool("AutoTauntRerolling", value)
+end
+
+function PlayerMeta:SetAutoTauntShowBar(value)
+	self:SetNWBool("AutoTauntShowBar", value)
 end
 
 function PlayerMeta:SetRoundHideTime(value)

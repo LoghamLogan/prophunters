@@ -85,7 +85,7 @@ function PlayerMeta:DisguiseAsProp(ent)
 	self:SetViewOffset(offset)
 	self:SetViewOffsetDucked(offset)
 
-	if !GAMEMODE.DeafenHuntersAtStart:GetBool() || GAMEMODE:GetGameState() ~= 1 then
+	if !GAMEMODE.HunterDeafenAtStart:GetBool() || GAMEMODE:GetGameState() ~= 1 then
 		self:EmitSound("weapons/bugbait/bugbait_squeeze" .. math.random(1, 3) .. ".wav")
 	end
 	self.LastDisguise = CurTime()

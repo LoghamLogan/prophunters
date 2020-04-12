@@ -25,6 +25,42 @@ function GM:PlayerFootstep(ply, pos, foot, sound, volume, filter )
 	return false
 end
 
+function PlayerMeta:GetAutoTauntAdditive()
+	return self:GetNWBool("AutoTauntAdditive", false)
+end
+
+function PlayerMeta:GetCurrentTauntLength()
+	return self:GetNWInt("CurrentTauntLength", 0)
+end
+
+function PlayerMeta:GetAutoTauntEnabled(value)
+		return self:GetNWBool("AutoTauntEnabled", false)
+end
+
+function PlayerMeta:GetAutoTauntMin()
+		return self:GetNWInt("AutoTauntTimeMin", 0)
+end
+
+function PlayerMeta:GetAutoTauntMax()
+		return self:GetNWInt("AutoTauntTimeMax", 0)
+end
+
+function PlayerMeta:GetAutoTauntRerolling()
+		return self:GetNWBool("AutoTauntRerolling", false)
+end
+
+function PlayerMeta:GetAutoTauntShowBar()
+	return self:GetNWBool("AutoTauntShowBar", false)
+end
+
+function PlayerMeta:GetLastRandomTauntTime()
+	return self:GetNWInt("LastRandomTauntTime", 0)
+end
+
+function PlayerMeta:GetNextRandomTauntTime()
+	return self:GetNWInt("NextRandomTauntTime", 0)
+end
+
 function PlayerMeta:GetForceTauntSkillCount()
 	return self:GetNWInt("forcetauntskillcount", 0)
 end
@@ -39,7 +75,7 @@ end
 
 function GM:FinishMove( ply, mv )
 
-	if ply:GetNWBool("PropIsFrozen") then		
+	if ply:GetNWBool("PropIsFrozen") then
 		return true
 	end
 

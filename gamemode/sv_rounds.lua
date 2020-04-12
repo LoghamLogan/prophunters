@@ -79,8 +79,10 @@ function GM:SetupRound()
 	local c = 0
 	for k, ply in pairs(player.GetAll()) do
 		ply:ResetPropFrozen()
+		ply:SetLastRandomTauntTime(0)
+		ply:SetForceTauntSkillCount(self.HunterSkillForceTauntAmmo:GetInt())
 		ply:SetRoundHideTime(self.RoundHideTime:GetInt())
-		ply:SetHunterSilence(self.DeafenHuntersAtStart:GetBool())
+		ply:SetHunterSilence(self.HunterDeafenAtStart:GetBool())
 		if ply:Team() != 1 then // ignore spectators
 			c = c + 1
 		end
@@ -130,7 +132,6 @@ function GM:StartRound()
 		ply.PropMovement = 0
 		ply.HunterKills = 0
 		ply.TauntAmount = 0
-		ply:SetForceTauntSkillCount(self.HuntersForceTauntSkillAmount:GetInt())
 		ply:SetNextRandomTauntTime(0)
 		if ply:Team() == 2 then
 			hunters = hunters + 1
@@ -293,6 +294,12 @@ end
 function GM:RoundsSetupPlayer(ply)
 	// start off not participating
 	ply:SetNWBool("RoundInGame", false)
+	ply:SetAutoTauntEnabled(self.AutoTauntEnabled:GetBool())
+	ply:SetAutoTauntTimeMin(self.AutoTauntTimeMin:GetInt())
+	ply:SetAutoTauntTimeMax(self.AutoTauntTimeMax:GetInt())
+	ply:SetAutoTauntRerolling(self.AutoTauntRerolling:GetBool())
+	ply:SetAutoTauntAdditive(self.AutoTauntAdditive:GetBool())
+	ply:SetAutoTauntShowBar(self.AutoTauntShowBar:GetBool())
 
 	// send game state
 	self:NetworkGameState(ply)
@@ -366,7 +373,7 @@ function GM:GetClosestProp(ply)
 end
 
 function GM:DoRandomTaunts()
-	if !self.RandTauntEnabled:GetBool() then
+	if !self.AutoTauntEnabled:GetBool() then
 		return
 	end
 	local aliveProps = self:GetAllAlivePropPlayers()

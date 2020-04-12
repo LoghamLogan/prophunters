@@ -40,23 +40,70 @@ util.AddNetworkString("player_model_sex")
 resource.AddFile("materials/melonbomber/skull.png")
 resource.AddFile("materials/melonbomber/skull_license.txt")
 
-GM.VoiceHearTeam = CreateConVar("ph_voice_hearotherteam", 0, bit.bor(FCVAR_NOTIFY), "Can we hear the voices of opposing teams" )
-GM.VoiceHearDead = CreateConVar("ph_voice_heardead", 1, bit.bor(FCVAR_NOTIFY), "Can we hear the voices of dead players and spectators" )
-GM.RoundLimit = CreateConVar("ph_roundlimit", 10, bit.bor(FCVAR_NOTIFY), "Number of rounds before mapvote" )
-GM.StartWaitTime = CreateConVar("ph_mapstartwait", 30, bit.bor(FCVAR_NOTIFY), "Number of seconds to wait for players on map start before starting round" )
-GM.HunterDamagePenalty = CreateConVar("ph_hunter_dmgpenalty", 3, bit.bor(FCVAR_NOTIFY), "Amount of damage a hunter should take for shooting an incorrect prop" )
-GM.HunterGrenadeAmount = CreateConVar("ph_hunter_smggrenades", 1, bit.bor(FCVAR_NOTIFY), "Amount of SMG grenades hunters should spawn with" )
-GM.DeadSpectateRoam = CreateConVar("ph_dead_canroam", 0, bit.bor(FCVAR_NOTIFY), "Can dead players use the roam spectate mode" )
-GM.PropsWinStayProps = CreateConVar("ph_props_onwinstayprops", 0, bit.bor(FCVAR_NOTIFY), "If the props win, they stay on the props team" )
-GM.PropsSmallSize = CreateConVar("ph_props_small_size", 200, bit.bor(FCVAR_NOTIFY), "Size that speed penalty for small size starts to apply (0 to disable)" )
-GM.PropsJumpPower = CreateConVar("ph_props_jumppower", 2, bit.bor(FCVAR_NOTIFY), "Jump power bonus for when props are disguised" )
-GM.PropsCamDistance = CreateConVar("ph_props_camdistance", 1, bit.bor(FCVAR_NOTIFY), "The camera distance multiplier for props when disguised")
-GM.RandTauntEnabled = CreateConVar("ph_randtaunt_enabled", 1, bit.bor(FCVAR_NOTIFY), "Enable random prop taunting (0 to disable)")
-GM.RandTimeMin = CreateConVar("ph_randtaunt_min", 30, bit.bor(FCVAR_NOTIFY), "Minimum time for random taunt")
-GM.RandTimeMax = CreateConVar("ph_randtaunt_max", 90, bit.bor(FCVAR_NOTIFY), "Maximum time for random taunt")
-GM.DeafenHuntersAtStart = CreateConVar("ph_mapstart_silence", 1, bit.bor(FCVAR_NOTIFY), "Deafen the hunters while the props are hiding")
-GM.HuntersForceTauntSkillAmount = CreateConVar("ph_hunter_forcetauntskill_amount", 1, bit.bor(FCVAR_NOTIFY), "Amount of times a hunter can press F4 to force the closest prop to taunt (0 to disable)")
-GM.RoundHideTime = CreateConVar("ph_roundhidetime", 30, bit.bor(FCVAR_NOTIFY), "Number of seconds before hunters are released" )
+// Misc Game settings
+GM.StartWaitTime             = CreateConVar("ph_mapstartwait", 30, bit.bor(FCVAR_NOTIFY), "Number of seconds to wait for players on map start before starting round" )
+GM.DeadSpectateRoam          = CreateConVar("ph_dead_canroam", 0, bit.bor(FCVAR_NOTIFY), "Can dead players use the roam spectate mode" )
+
+// Voices
+GM.VoiceHearTeam             = CreateConVar("ph_voice_hearotherteam", 0, bit.bor(FCVAR_NOTIFY), "Can we hear the voices of opposing teams" )
+GM.VoiceHearDead             = CreateConVar("ph_voice_heardead", 1, bit.bor(FCVAR_NOTIFY), "Can we hear the voices of dead players and spectators" )
+
+// Round settings
+GM.RoundLimit                = CreateConVar("ph_roundlimit", 10, bit.bor(FCVAR_NOTIFY), "Number of rounds before mapvote" )
+GM.RoundHideTime             = CreateConVar("ph_hidetime", 30, bit.bor(FCVAR_NOTIFY), "Number of seconds before hunters are released" )
+
+// Hunter settings
+GM.HunterDamagePenalty       = CreateConVar("ph_hunter_dmgpenalty", 3, bit.bor(FCVAR_NOTIFY), "Amount of damage a hunter should take for shooting an incorrect prop" )
+GM.HunterGrenadeAmount       = CreateConVar("ph_hunter_smggrenades", 1, bit.bor(FCVAR_NOTIFY), "Amount of SMG grenades hunters should spawn with" )
+GM.HunterDeafenAtStart	     = CreateConVar("ph_hunter_deafen_start", 1, bit.bor(FCVAR_NOTIFY), "Deafen the hunters while the props are hiding")
+GM.HunterSkillForceTauntAmmo = CreateConVar("ph_hunter_forcetauntskill_amount", 1, bit.bor(FCVAR_NOTIFY), "Amount of times a hunter can press F4 to force the closest prop to taunt (0 to disable)")
+
+// Prop settings
+GM.PropsWinStayProps         = CreateConVar("ph_props_onwinstayprops", 0, bit.bor(FCVAR_NOTIFY), "If the props win, they stay on the props team" )
+GM.PropsSmallSize            = CreateConVar("ph_props_small_size", 200, bit.bor(FCVAR_NOTIFY), "Size that speed penalty for small size starts to apply (0 to disable)" )
+GM.PropsJumpPower            = CreateConVar("ph_props_jumppower", 2, bit.bor(FCVAR_NOTIFY), "Jump power bonus for when props are disguised" )
+GM.PropsCamDistance          = CreateConVar("ph_props_camdistance", 1, bit.bor(FCVAR_NOTIFY), "The camera distance multiplier for props when disguised")
+
+// Auto-taunt related
+GM.AutoTauntEnabled          = CreateConVar("ph_autotaunt_enabled", 1, bit.bor(FCVAR_NOTIFY), "Enable random prop taunting (0 to disable)")
+GM.AutoTauntTimeMin          = CreateConVar("ph_autotaunt_min", 30, bit.bor(FCVAR_NOTIFY), "Minimum time for random taunt")
+GM.AutoTauntTimeMax          = CreateConVar("ph_autotaunt_max", 90, bit.bor(FCVAR_NOTIFY), "Maximum time for random taunt")
+GM.AutoTauntRerolling        = CreateConVar("ph_autotaunt_rerolling", 1, bit.bor(FCVAR_NOTIFY), "Does taunting re-roll the auto taunt timer?" )
+GM.AutoTauntShowBar          = CreateConVar("ph_autotaunt_showbar", 1, bit.bor(FCVAR_NOTIFY), "Displays the auto taunt progress bar to props" )
+GM.AutoTauntAdditive         = CreateConVar("ph_autotaunt_additive", 1, bit.bor(FCVAR_NOTIFY), "Add the duration of a played taunt to the auto taunt timer" )
+GM.AutoTauntAdditiveMulti    = CreateConVar("ph_autotaunt_additive_multiplier", 2, bit.bor(FCVAR_NOTIFY), "Multiplier for the taunt duration when adding time to the auto taunt timer" )
+
+// cvar hooks
+cvars.AddChangeCallback("ph_autotaunt_additive", function(cvarName, valueOld, valueNew)
+	for k, ply in pairs(player.GetAll()) do
+		ply:SetAutoTauntAdditive(valueNew)
+	end
+end)
+cvars.AddChangeCallback("ph_autotaunt_enabled", function(cvarName, valueOld, valueNew)
+	for k, ply in pairs(player.GetAll()) do
+		ply:SetAutoTauntEnabled(valueNew)
+	end
+end)
+cvars.AddChangeCallback("ph_autotaunt_min", function(cvarName, valueOld, valueNew)
+	for k, ply in pairs(player.GetAll()) do
+		ply:SetAutoTauntTimeMin(valueNew)
+	end
+end)
+cvars.AddChangeCallback("ph_autotaunt_max", function(cvarName, valueOld, valueNew)
+	for k, ply in pairs(player.GetAll()) do
+		ply:SetAutoTauntTimeMax(valueNew)
+	end
+end)
+cvars.AddChangeCallback("ph_autotaunt_rerolling", function(cvarName, valueOld, valueNew)
+	for k, ply in pairs(player.GetAll()) do
+		ply:SetAutoTauntRerolling(valueNew)
+	end
+end)
+cvars.AddChangeCallback("ph_autotaunt_showbar", function(cvarName, valueOld, valueNew)
+	for k, ply in pairs(player.GetAll()) do
+		ply:SetAutoTauntShowBar(valueNew)
+	end
+end)
 
 function GM:Initialize()
 	self.RoundWaitForPlayers = CurTime()

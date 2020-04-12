@@ -59,6 +59,7 @@ end
 local helpKeysProps = {
 	{"attack", "Disguise as prop"},
 	{"menu_context", "Lock prop rotation"},
+	{"reload", "Freeze in place"},
 	{"gm_showspare1", "Taunt"},
 	{"gm_showspare2", "Random Taunt"}
 }
@@ -77,6 +78,12 @@ function GM:DrawGameHUD()
 		ply = self:GetCSpectatee()
 	end
 	self:DrawHealth(ply)
+
+	// taunt bar
+	local showTauntBar = util.tobool(ply:GetAutoTauntEnabled()) && util.tobool(ply:GetAutoTauntShowBar())
+	if showTauntBar && ply:Team() == 3 then
+		self:DrawTauntBar(ply)
+	end
 
 	if ply != LocalPlayer() then
 		local col = ply:GetPlayerColor()
@@ -192,6 +199,172 @@ local function drawPoly(x, y, w, h, percent)
 	surface.DrawPoly(vertexes)
 end
 
+function GetTauntBarPercentage01(ply)
+
+	local roundTime = GAMEMODE:GetStateRunningTime()
+	if roundTime <= 0 then
+		return 0
+	end
+	//local lastTauntTime = ply:GetLastRandomTauntTime()
+	//if lastTauntTime <= 0 then
+	//	return 1
+	//end
+	local randTime = ply:GetNextRandomTauntTime()
+	if randTime <= 0 then
+		return 0
+	end
+
+	local maxAutoTauntTime = ply:GetAutoTauntMax()
+
+	local totalTime = maxAutoTauntTime
+	local timeUntil = randTime - roundTime
+	local percentage = timeUntil / totalTime;
+
+	return math.Clamp(percentage, 0, 1)
+
+end
+
+local lastTauntAmount
+local lastTauntLength
+
+function GM:DrawTauntBar(ply)
+
+	local barHeight = 40
+	local barWidth = math.ceil(ScrW() * 0.6)
+
+	local xPos = (ScrW() / 2) - (barWidth / 2)
+	local yPos = ScrH() - barHeight - (ScrH() * 0.08)
+
+	local rerollingEnabled = util.tobool(ply:GetAutoTauntRerolling())
+	local additiveTauntEnabled = util.tobool(ply:GetAutoTauntAdditive())
+
+	if GAMEMODE.GameState == 2 then
+
+		local isTaunting = ply:GetLastRandomTauntTime() > GAMEMODE:GetStateRunningTime()
+		local timeUntilTaunt = ply:GetNextRandomTauntTime() - GAMEMODE:GetStateRunningTime()
+		local minAutoTauntTime = ply:GetAutoTauntMin()
+		local maxAutoTauntTime = ply:GetAutoTauntMax()
+		local diff = maxAutoTauntTime - minAutoTauntTime
+
+		local xFillEndPercentage01 = GetTauntBarPercentage01(ply)
+		local fillWidth = math.max(barWidth * xFillEndPercentage01, 1)
+
+		if !isTaunting then
+			lastTauntAmount = fillWidth
+		else
+			lastTauntAmount = lastTauntAmount or 0
+			local currentTauntLength = ply:GetCurrentTauntLength()
+			local startOfTauntTime   = ply:GetLastRandomTauntTime() - currentTauntLength
+			local endOfTauntTime     = ply:GetLastRandomTauntTime()
+
+			local deltaTime = ((GAMEMODE:GetStateRunningTime() - startOfTauntTime)) / (endOfTauntTime - startOfTauntTime)
+			local newFill   = (deltaTime * (fillWidth - lastTauntAmount)) + lastTauntAmount
+
+			fillWidth = newFill
+		end
+
+		if xFillEndPercentage01 > 0 then
+
+			// Draw min line
+			local pixelsPerSecond = barWidth / maxAutoTauntTime
+			local minLineXPos     = xPos + (minAutoTauntTime * pixelsPerSecond)
+			local mediumLineXPos  = xPos + (minAutoTauntTime * pixelsPerSecond) + ((diff * 0.20) * pixelsPerSecond)
+			local maxLineXPos     = xPos + (maxAutoTauntTime * pixelsPerSecond)
+
+			local minLineWidth = minLineXPos - xPos
+			local medLineWidth = mediumLineXPos - xPos
+
+			surface.SetDrawColor(255, 255, 100, 255)
+			surface.DrawRect(minLineXPos - 5, yPos - 8, 9, 8)
+			surface.DrawRect(minLineXPos - 5, yPos + barHeight, 9, 8)
+
+			surface.SetDrawColor(255, 0, 0, 255)
+			surface.DrawRect(minLineXPos-3, yPos - 5, 5, barHeight + 10)
+			//draw.SimpleText("MIN", "RobotoHUD-10", minLineXPos, yPos + (barHeight / 2), color_white, 1, 1)
+
+			// Draw inner bar
+			if fillWidth < minLineWidth then
+				surface.SetDrawColor(220, 0, 0, 180)
+			elseif fillWidth < medLineWidth then
+				surface.SetDrawColor(220, 220, 0, 180)
+			else
+				surface.SetDrawColor(0, 120, 0, 180)
+			end
+			surface.DrawRect(xPos, yPos, fillWidth, barHeight)
+
+			//surface.SetDrawColor(0, 200, 0, 180)
+			//surface.DrawRect(maxLineXPos, yPos, 10, barHeight)
+			//draw.SimpleText("MAX", "RobotoHUD-10", maxLineXPos, yPos + (barHeight / 2), color_white, 1, 1)
+
+		end
+
+		DrawAutoTauntBG(xPos, yPos, fillWidth, barWidth, barHeight, timeUntilTaunt)
+
+		local barText = string.format("auto taunt in %s seconds", math.Round(timeUntilTaunt))
+		if isTaunting then
+			barText = "currently taunting"
+		end
+		DrawAutoTauntBarText(barText, yPos, barHeight)
+		DrawAutoTauntBarInfoText(yPos, barHeight, rerollingEnabled, additiveTauntEnabled, minAutoTauntTime)
+		DrawAutoTauntBarScale(xPos, yPos, barWidth, barHeight, minAutoTauntTime, maxAutoTauntTime)
+
+	else // not gamestate 2
+
+		local minAutoTauntTime = ply:GetAutoTauntMin()
+		DrawAutoTauntBG(xPos, yPos, 0, barWidth, barHeight, 0)
+		DrawAutoTauntBarText("waiting...", yPos, barHeight)
+		DrawAutoTauntBarInfoText(yPos, barHeight, rerollingEnabled, additiveTauntEnabled, minAutoTauntTime)
+
+	end
+
+end
+
+function DrawAutoTauntBarScale(xPos, yPos, barWidth, barHeight, minAutoTauntTime, maxAutoTauntTime)
+
+	local pixelsPerSecond = barWidth / maxAutoTauntTime
+	local minLineXPos     = xPos + (minAutoTauntTime * pixelsPerSecond)
+	local maxLineXPos     = xPos + (maxAutoTauntTime * pixelsPerSecond)
+	// Draw seconds text
+	draw.ShadowText("0", "RobotoHUD-5", xPos, yPos + barHeight, color_white, 1, 1)
+	draw.ShadowText(minAutoTauntTime, "RobotoHUD-5", minLineXPos, yPos + barHeight + 12, color_white, 1, 1)
+	draw.ShadowText(maxAutoTauntTime, "RobotoHUD-5", maxLineXPos, yPos + barHeight, color_white, 1, 1)
+
+end
+
+function DrawAutoTauntBarText(barText, yPos, barHeight)
+
+	// Draw seconds text
+	local centerBarXPos = (ScrW() / 2)
+	local centerBarYPos = yPos + (barHeight / 2)
+	draw.ShadowText(barText, "RobotoHUD-15", centerBarXPos, centerBarYPos, color_white, 1, 1)
+
+end
+
+function DrawAutoTauntBG(xPos, yPos, fillWidth, barWidth, barHeight)
+
+	// Draw BG bar
+	local bgBarXPos  = xPos + fillWidth
+	local bgBarWidth = barWidth - fillWidth
+	surface.SetDrawColor(50, 50, 50, 180)
+	surface.DrawRect(bgBarXPos, yPos, bgBarWidth, barHeight)
+end
+
+
+function DrawAutoTauntBarInfoText(yPos, barHeight, rerollingEnabled, additiveTauntEnabled, minAutoTauntTime)
+
+	local centerBarXPos = (ScrW() / 2)
+	local centerBarYPos = yPos + (barHeight / 2)
+	if rerollingEnabled then
+		local tauntKey1 = input.LookupBinding("gm_showspare1")
+		local tauntKey2 = input.LookupBinding("gm_showspare2")
+		if additiveTauntEnabled then
+			draw.ShadowText("(".. tauntKey1 ..") taunts increase auto-taunt bar by their duration.", "RobotoHUD-10", centerBarXPos, centerBarYPos + 50, color_white, 1, 1)
+		end
+		draw.ShadowText("(".. tauntKey2 ..") random taunts set the auto-taunt bar to a random position (above "..minAutoTauntTime.." seconds).", "RobotoHUD-10", centerBarXPos, centerBarYPos + 80, color_white, 1, 1)
+	end
+
+end
+
 function GM:DrawHealth(ply)
 
 	local client = LocalPlayer()
@@ -256,12 +429,13 @@ function GM:DrawHealth(ply)
 	local fg = draw.GetFontHeight("RobotoHUD-15")
 	if ply:IsDisguised() && ply:DisguiseRotationLocked() then
 		draw.ShadowText("ROTATION", "RobotoHUD-15", x + w + 20, y + h / 2 - fg / 2, color_white, 0, 1)
-		draw.ShadowText("LOCK", "RobotoHUD-15", x + w + 20, y + h / 2 + fg / 2, color_white, 0, 1)
+		draw.ShadowText("LOCKED", "RobotoHUD-15", x + w + 20, y + h / 2 + fg / 2, color_white, 0, 1)
 	end
 
 	if ply:Team() == 2 then
 		local skillAmt = ply:GetForceTauntSkillCount()
-		draw.ShadowText(string.format("Force Prop Taunt: %s left", skillAmt), "RobotoHUD-15", x + w + 20, y + h / 2 - fg / 2, color_white, 0, 1)
+		local key = input.LookupBinding("gm_showspare2");
+		draw.ShadowText(string.format("(%s) Force Prop Taunt: %s left", key, skillAmt), "RobotoHUD-15", x + w + 20, y + h / 2 - fg / 2, color_white, 0, 1)
 	end
 
 end

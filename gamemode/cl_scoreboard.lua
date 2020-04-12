@@ -118,7 +118,7 @@ local function makeTeamList(parent, pteam)
 		surface.DrawLine(0, hs, 0, h - 1)
 		surface.DrawLine(w - 1, hs, w - 1, h - 1)
 		surface.DrawLine(0, h - 1, w, h - 1)
-		
+
 		surface.SetDrawColor(55, 55, 55, 120)
 		surface.DrawRect(1, hs, w - 2, h - hs)
 	end
@@ -135,7 +135,7 @@ local function makeTeamList(parent, pteam)
 	headp:DockMargin(0,0,0,4)
 	headp:Dock(TOP)
 	headp:SetTall(hs)
-	function headp:Paint(w, h) 
+	function headp:Paint(w, h)
 		surface.SetDrawColor(68, 68, 68, 255)
 		-- surface.DrawRect(0, 0, w, h)
 
@@ -179,7 +179,7 @@ local function makeTeamList(parent, pteam)
 	mlist = vgui.Create("DScrollPanel", pnl)
 	mlist:Dock(FILL)
 	function mlist:Paint(w, h)
-		
+
 	end
 
 	// child positioning
@@ -243,13 +243,13 @@ function GM:ScoreboardShow()
 		menu.Credits = vgui.Create("DPanel", menu)
 		menu.Credits:Dock(TOP)
 		menu.Credits:DockMargin(0, 0, 0, 4)
-		function menu.Credits:Paint(w, h) 
+		function menu.Credits:Paint(w, h)
 			surface.SetFont("RobotoHUD-25")
 			local t = GAMEMODE.Name or ""
 			local tw,th = surface.GetTextSize(t)
 			draw.ShadowText(t, "RobotoHUD-25", 4, 0, Color(199, 49, 29), 0)
 
-			draw.ShadowText("by Mechanical Mind, version " .. tostring(GAMEMODE.Version or "error"), "RobotoHUD-L15", 4 + tw + 24, h  * 0.9, Color(220, 220, 220), 0, 4)
+			draw.ShadowText("original gamemode by MechanicalMind, updated by Logham, " .. tostring(GAMEMODE.Version or "error"), "RobotoHUD-L15", 4 + tw + 24, h  * 0.9, Color(220, 220, 220), 0, 4)
 		end
 
 		function menu.Credits:PerformLayout()
@@ -353,7 +353,7 @@ function GM:DoScoreboardActionPopup(ply)
 			end
 		end
 	end
-	
+
 	if IsValid(LocalPlayer()) && LocalPlayer():IsAdmin() then
 		actions:AddSpacer()
 
