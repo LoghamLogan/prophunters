@@ -385,6 +385,11 @@ function GM:PlayerDeath(ply, inflictor, attacker )
 	// time until player can spectate another player
 	ply.SpectateTime = CurTime() + 2
 
+	// stop any taunts currently playing
+	if ply.Taunting && ply.CurrentTaunt != null then
+		ply:StopSound(ply.CurrentTaunt)
+	end
+
 	if IsValid(attacker) && attacker:IsPlayer() && attacker != ply then
 		attacker:AddMoney(100)
 	end
@@ -581,8 +586,9 @@ function PlayerMeta:DoRandomTaunt()
 	end
 
 	self:EmitSound(snd)
-	self.Taunting = CurTime() + duration + 0.1
-	self.TauntAmount = (self.TauntAmount or 0) + 1
+	self.Taunting     = CurTime() + duration + 0.1
+	self.TauntAmount  = (self.TauntAmount or 0) + 1
+	self.CurrentTaunt = snd
 
 	self:SetCurrentTauntLength(duration)
 
@@ -633,6 +639,7 @@ function PlayerMeta:Taunt(snd)
 	self:EmitSound(snd)
 	self.Taunting = CurTime() + duration + 0.1
 	self.TauntAmount = (self.TauntAmount or 0) + 1
+	self.CurrentTaunt = snd
 
 	self:SetCurrentTauntLength(duration)
 

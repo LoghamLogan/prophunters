@@ -57,12 +57,16 @@ GM.HunterDamagePenalty       = CreateConVar("ph_hunter_dmgpenalty", 3, bit.bor(F
 GM.HunterGrenadeAmount       = CreateConVar("ph_hunter_smggrenades", 1, bit.bor(FCVAR_NOTIFY), "Amount of SMG grenades hunters should spawn with" )
 GM.HunterDeafenAtStart	     = CreateConVar("ph_hunter_deafen_start", 1, bit.bor(FCVAR_NOTIFY), "Deafen the hunters while the props are hiding")
 GM.HunterSkillForceTauntAmmo = CreateConVar("ph_hunter_forcetauntskill_amount", 1, bit.bor(FCVAR_NOTIFY), "Amount of times a hunter can press F4 to force the closest prop to taunt (0 to disable)")
+GM.HunterAllowPickup         = CreateConVar("ph_hunter_pickup_allow", 0, bit.bor(FCVAR_NOTIFY), "Allow hunters to pickup props with the 'use' key" )
+GM.HuntersTakeFallDamage     = CreateConVar("ph_hunter_falldamage", 0, bit.bor(FCVAR_NOTIFY), "Are hunters effected by fall damage?" )
 
 // Prop settings
 GM.PropsWinStayProps         = CreateConVar("ph_props_onwinstayprops", 0, bit.bor(FCVAR_NOTIFY), "If the props win, they stay on the props team" )
 GM.PropsSmallSize            = CreateConVar("ph_props_small_size", 200, bit.bor(FCVAR_NOTIFY), "Size that speed penalty for small size starts to apply (0 to disable)" )
 GM.PropsJumpPower            = CreateConVar("ph_props_jumppower", 2, bit.bor(FCVAR_NOTIFY), "Jump power bonus for when props are disguised" )
 GM.PropsCamDistance          = CreateConVar("ph_props_camdistance", 1, bit.bor(FCVAR_NOTIFY), "The camera distance multiplier for props when disguised")
+GM.PropsAllowPickup          = CreateConVar("ph_props_pickup_allow", 1, bit.bor(FCVAR_NOTIFY), "Allow props to pickup props with the 'use' key" )
+GM.PropsTakeFallDamage       = CreateConVar("ph_props_falldamage", 0, bit.bor(FCVAR_NOTIFY), "Are props effected by fall damage?" )
 
 // Auto-taunt related
 GM.AutoTauntEnabled          = CreateConVar("ph_autotaunt_enabled", 1, bit.bor(FCVAR_NOTIFY), "Enable random prop taunting (0 to disable)")
@@ -142,7 +146,10 @@ function GM:ShutDown()
 end
 
 function GM:AllowPlayerPickup( ply, ent )
-	return true
+	if ply:Team() == 3 then
+		return self.PropsAllowPickup:GetBool()
+	end
+	return self.HunterAllowPickup:GetBool()
 end
 
 function GM:PlayerNoClip( ply )
